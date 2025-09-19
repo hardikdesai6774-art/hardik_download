@@ -1,4 +1,6 @@
 import { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
+import fs from 'fs';
+import path from 'path';
 
 interface UpdatePayload {
   url: string;
@@ -11,7 +13,28 @@ interface RotationState {
   lastRotation?: string;
 }
 
-const KV_NAMESPACE = 'rotation-state';
+const STATE_FILE = path.join(process.cwd(), 'rotation-state.json');
+
+const readState = (): RotationState => {
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
+    }
+  } catch (error) {
+    console.error('Error reading state file:', error);
+  }
+  return {};
+};
+
+const writeState = (state: RotationState): boolean => {
+  try {
+    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
+    return true;
+  } catch (error) {
+    console.error('Error writing state file:', error);
+    return false;
+  }
+};
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   if (event.httpMethod !== 'POST') {
@@ -33,24 +56,8 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       };
     }
 
-    // Get the KV store
-    const kv = context.clientContext?.kv;
-    
-    if (!kv) {
-      throw new Error('KV store not available');
-    }
-
     // Read current state
-    let currentState: RotationState = {};
-    try {
-      const stateValue = await kv.get(KV_NAMESPACE);
-      if (stateValue) {
-        currentState = JSON.parse(stateValue);
-      }
-    } catch (error) {
-      console.error('Error reading from KV store:', error);
-      throw new Error('Failed to read current state');
-    }
+    const currentState = readState();
     
     // Update state
     const newState: RotationState = {
@@ -60,12 +67,11 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       lastRotation: new Date().toISOString()
     };
 
-    // Save state to KV store
-    try {
-      await kv.set(KV_NAMESPACE, JSON.stringify(newState));
-    } catch (error) {
-      console.error('Error saving to KV store:', error);
-      throw new Error('Failed to save rotation state');
+    // Save state to file
+    const success = writeState(newState);
+    
+    if (!success) {
+      throw new Error('Failed to save rotation state to file');
     }
 
     console.log('Rotation updated:', newState);

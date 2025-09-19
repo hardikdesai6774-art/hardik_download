@@ -3,6 +3,10 @@
   publish = "."
   functions = "netlify/functions"
 
+# Include the rotation-state.json file in the build output
+[[plugins]]
+  package = "@netlify/plugin-functions-output"
+
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/redirect"
@@ -18,16 +22,9 @@
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/blobs"]
 
-# Enable KV store for state management
-[functions.rotation-status]
-  kv = "rotation-kv-store"
-
-[functions.update-rotation]
-  kv = "rotation-kv-store"
-
+# Scheduled rotation - runs every 4 hours
 [functions.rotate-site]
-  kv = "rotation-kv-store"
-  schedule = "0 */4 * * *"  # Run every 4 hours
+  schedule = "0 */4 * * *"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -35,7 +32,7 @@
 # Required environment variables for the rotation system
 [context.production.environment]
   STABLE_URL = "https://kaveri-mallu.netlify.app"
-  # These will be stored in KV store:
+  # These will be stored in rotation-state.json:
   # - CURRENT_SITE_URL
   # - CURRENT_SITE_ID
   # - LAST_ROTATION

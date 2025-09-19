@@ -1,4 +1,6 @@
 import { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
+import fs from 'fs';
+import path from 'path';
 
 interface RotationState {
   currentSiteUrl?: string;
@@ -6,42 +8,29 @@ interface RotationState {
   lastRotation?: string;
 }
 
-const KV_NAMESPACE = 'rotation-state';
+const STATE_FILE = path.join(process.cwd(), 'rotation-state.json');
+
+const readState = (): RotationState => {
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
+    }
+  } catch (error) {
+    console.error('Error reading state file:', error);
+  }
+  
+  // Return default state if file doesn't exist or there's an error
+  return {
+    currentSiteUrl: process.env.CURRENT_SITE_URL,
+    currentSiteId: process.env.CURRENT_SITE_ID,
+    lastRotation: process.env.LAST_ROTATION
+  };
+};
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   try {
-    // Get the KV store
-    const kv = context.clientContext?.kv;
-    
-    if (!kv) {
-      throw new Error('KV store not available');
-    }
-    
-    // Try to get the current state from KV store
-    let state: RotationState = {};
-    try {
-      const stateValue = await kv.get(KV_NAMESPACE);
-      if (stateValue) {
-        state = JSON.parse(stateValue);
-      } else {
-        // Initialize with environment variables if KV is empty
-        state = {
-          currentSiteUrl: process.env.CURRENT_SITE_URL,
-          currentSiteId: process.env.CURRENT_SITE_ID,
-          lastRotation: process.env.LAST_ROTATION
-        };
-        // Save initial state
-        await kv.set(KV_NAMESPACE, JSON.stringify(state));
-      }
-    } catch (error) {
-      console.error('Error reading from KV store:', error);
-      // Fallback to environment variables
-      state = {
-        currentSiteUrl: process.env.CURRENT_SITE_URL,
-        currentSiteId: process.env.CURRENT_SITE_ID,
-        lastRotation: process.env.LAST_ROTATION
-      };
-    }
+    // Read state from file
+    const state = readState();
     
     // Calculate next rotation time (every 4 hours)
     let nextRotation: string | null = null;

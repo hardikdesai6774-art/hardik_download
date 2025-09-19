@@ -1,5 +1,11 @@
 import { Context } from "https://edge.netlify.com";
 
+interface RotationState {
+  currentSiteUrl?: string;
+  currentSiteId?: string;
+  lastRotation?: string;
+}
+
 export default async (request: Request, context: Context) => {
   try {
     const url = new URL(request.url);
@@ -9,17 +15,23 @@ export default async (request: Request, context: Context) => {
       return;
     }
 
-    // Get the current active site URL from blob store
-    const { blobs } = context;
-    const currentSiteUrl = await blobs?.get("current-site-url");
-
-    // Only redirect if we have a valid site URL
-    if (currentSiteUrl) {
-      console.log(`Redirecting to active site: ${currentSiteUrl}`);
-      return Response.redirect(currentSiteUrl, 302);
+    try {
+      // Try to fetch the rotation state from the JSON file
+      const response = await fetch(new URL('/rotation-state.json', url.origin));
+      if (response.ok) {
+        const state: RotationState = await response.json();
+        
+        // Only redirect if we have a valid site URL
+        if (state.currentSiteUrl) {
+          console.log(`Redirecting to active site: ${state.currentSiteUrl}`);
+          return Response.redirect(state.currentSiteUrl, 302);
+        }
+      }
+    } catch (error) {
+      console.error('Error reading rotation state:', error);
     }
     
-    // If no active site URL, serve the current site
+    // If no active site URL or error, serve the current site
     console.log("No active site URL found. Serving current site.");
     return;
     
