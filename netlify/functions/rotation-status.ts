@@ -1,6 +1,4 @@
 import { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
-import fs from 'fs';
-import path from 'path';
 
 interface RotationState {
   currentSiteUrl?: string;
@@ -8,43 +6,42 @@ interface RotationState {
   lastRotation?: string;
 }
 
-// File to store rotation state
-const STATE_FILE = path.join('/tmp', 'rotation-state.json');
-
-// Helper function to read state from file
-const readState = (): RotationState => {
-  try {
-    if (fs.existsSync(STATE_FILE)) {
-      return JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
-    }
-  } catch (error) {
-    console.error('Error reading state file:', error);
-  }
-  return {};
-};
-
-// Helper function to write state to file
-const writeState = (state: RotationState) => {
-  try {
-    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Error writing state file:', error);
-  }
-};
-
-// Initialize state file if it doesn't exist
-if (!fs.existsSync(STATE_FILE)) {
-  writeState({
-    currentSiteUrl: process.env.CURRENT_SITE_URL,
-    currentSiteId: process.env.CURRENT_SITE_ID,
-    lastRotation: process.env.LAST_ROTATION || new Date().toISOString()
-  });
-}
+const KV_NAMESPACE = 'rotation-state';
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   try {
-    // Get current rotation state from file
-    const state = readState();
+    // Get the KV store
+    const kv = context.clientContext?.kv;
+    
+    if (!kv) {
+      throw new Error('KV store not available');
+    }
+    
+    // Try to get the current state from KV store
+    let state: RotationState = {};
+    try {
+      const stateValue = await kv.get(KV_NAMESPACE);
+      if (stateValue) {
+        state = JSON.parse(stateValue);
+      } else {
+        // Initialize with environment variables if KV is empty
+        state = {
+          currentSiteUrl: process.env.CURRENT_SITE_URL,
+          currentSiteId: process.env.CURRENT_SITE_ID,
+          lastRotation: process.env.LAST_ROTATION
+        };
+        // Save initial state
+        await kv.set(KV_NAMESPACE, JSON.stringify(state));
+      }
+    } catch (error) {
+      console.error('Error reading from KV store:', error);
+      // Fallback to environment variables
+      state = {
+        currentSiteUrl: process.env.CURRENT_SITE_URL,
+        currentSiteId: process.env.CURRENT_SITE_ID,
+        lastRotation: process.env.LAST_ROTATION
+      };
+    }
     
     // Calculate next rotation time (every 4 hours)
     let nextRotation: string | null = null;
@@ -61,7 +58,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       nextRotation: nextRotation || "Unknown",
       systemTime: new Date().toISOString(),
       rotationInterval: "Every 4 hours (0 */4 * * *)",
-      note: "Using file-based state storage"
+      note: "Using Netlify KV store for state"
     };
     
     return {

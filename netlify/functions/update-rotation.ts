@@ -1,6 +1,4 @@
 import { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
-import fs from 'fs';
-import path from 'path';
 
 interface UpdatePayload {
   url: string;
@@ -13,31 +11,7 @@ interface RotationState {
   lastRotation?: string;
 }
 
-// File to store rotation state
-const STATE_FILE = path.join('/tmp', 'rotation-state.json');
-
-// Helper function to read state from file
-const readState = (): RotationState => {
-  try {
-    if (fs.existsSync(STATE_FILE)) {
-      return JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
-    }
-  } catch (error) {
-    console.error('Error reading state file:', error);
-  }
-  return {};
-};
-
-// Helper function to write state to file
-const writeState = (state: RotationState) => {
-  try {
-    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
-    return true;
-  } catch (error) {
-    console.error('Error writing state file:', error);
-    return false;
-  }
-};
+const KV_NAMESPACE = 'rotation-state';
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   if (event.httpMethod !== 'POST') {
@@ -54,16 +28,29 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     if (!url) {
       return { 
         statusCode: 400, 
-        headers: { 
-          'Content-Type': 'application/json' as const, 
-          'Access-Control-Allow-Origin': '*' as const 
-        },
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({ error: 'URL is required' })
       };
     }
 
+    // Get the KV store
+    const kv = context.clientContext?.kv;
+    
+    if (!kv) {
+      throw new Error('KV store not available');
+    }
+
     // Read current state
-    const currentState = readState();
+    let currentState: RotationState = {};
+    try {
+      const stateValue = await kv.get(KV_NAMESPACE);
+      if (stateValue) {
+        currentState = JSON.parse(stateValue);
+      }
+    } catch (error) {
+      console.error('Error reading from KV store:', error);
+      throw new Error('Failed to read current state');
+    }
     
     // Update state
     const newState: RotationState = {
@@ -73,10 +60,11 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       lastRotation: new Date().toISOString()
     };
 
-    // Save state
-    const success = writeState(newState);
-    
-    if (!success) {
+    // Save state to KV store
+    try {
+      await kv.set(KV_NAMESPACE, JSON.stringify(newState));
+    } catch (error) {
+      console.error('Error saving to KV store:', error);
       throw new Error('Failed to save rotation state');
     }
 
@@ -93,7 +81,8 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         message: 'Rotation updated successfully',
         url,
         siteId: siteId || 'not-provided',
-        lastRotation: newState.lastRotation
+        lastRotation: newState.lastRotation,
+        note: 'State saved to Netlify KV store'
       })
     };
   } catch (error) {

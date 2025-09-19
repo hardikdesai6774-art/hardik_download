@@ -18,25 +18,28 @@
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/blobs"]
 
-# Scheduled rotation - runs every 4 hours
-[functions.rotate-site]
-  schedule = "0 */4 * * *"
+# Enable KV store for state management
+[functions.rotation-status]
+  kv = "rotation-kv-store"
 
-# Function to update rotation manually
 [functions.update-rotation]
-  # No schedule - called manually
+  kv = "rotation-kv-store"
+
+[functions.rotate-site]
+  kv = "rotation-kv-store"
+  schedule = "0 */4 * * *"  # Run every 4 hours
 
 [build.environment]
   NODE_VERSION = "20"
 
 # Required environment variables for the rotation system
 [context.production.environment]
-  # Set these in your Netlify dashboard:
-  CURRENT_SITE_URL = ""  # Will be set by the rotation system
-  CURRENT_SITE_ID = ""   # Will be set by the rotation system
-  LAST_ROTATION = ""     # Will be set by the rotation system
-  NETLIFY_ACCESS_TOKEN = ""  # Your Netlify API token
   STABLE_URL = "https://kaveri-mallu.netlify.app"
+  # These will be stored in KV store:
+  # - CURRENT_SITE_URL
+  # - CURRENT_SITE_ID
+  # - LAST_ROTATION
+  # - NETLIFY_ACCESS_TOKEN (set in Netlify dashboard)
 
 # Development environment overrides
 [context.develop.environment]
