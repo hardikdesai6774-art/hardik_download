@@ -1,0 +1,24 @@
+{
+  "name": "frnd-stable-redirect",
+  "version": "1.0.0",
+  "description": "Stable redirect site for FRND app rotation system",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build step needed for static site'",
+    "dev": "npx serve .",
+    "test-rotation": "curl -X POST /.netlify/functions/rotate-site"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^2.8.1",
+    "serve": "^14.2.3"
+  },
+  "keywords": [
+    "netlify",
+    "redirect",
+    "edge-functions",
+    "scheduled-functions",
+    "site-rotation"
+  ],
+  "author": "FRND Team",
+  "license": "MIT"
+}

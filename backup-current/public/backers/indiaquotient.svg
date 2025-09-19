@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="420" height="120" viewBox="0 0 420 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="IndiaQuotient logo placeholder">
+  <rect width="100%" height="100%" fill="white"/>
+  <g fill="#98A2B3">
+    <rect x="40" y="30" rx="16" ry="16" width="50" height="50" fill="#98A2B3" opacity="0.3"/>
+    <circle cx="55" cy="55" r="5" fill="#98A2B3"/>
+    <path d="M85 65 L95 75" stroke="#98A2B3" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="120" y="72" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-weight="600" font-size="32" fill="#98A2B3">India<tspan font-weight="400">Quotient</tspan></text>
+</svg>

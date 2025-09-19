@@ -1,22 +1,51 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
+  command = "echo 'No build step needed for static site'"
+  publish = "."
+  functions = "netlify/functions"
 
-# Ensure SPA routes fallback to index.html
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/.netlify/functions/redirect"
   status = 200
+  force = false
 
-# Serve APK/ZIP with correct content types and force download prompt
-[[headers]]
-  for = "/*.apk"
-  [headers.values]
-    Content-Type = "application/vnd.android.package-archive"
-    Content-Disposition = "attachment"
+[[edge_functions]]
+  function = "redirect"
+  path = "/*"
 
-[[headers]]
-  for = "/*.zip"
-  [headers.values]
-    Content-Type = "application/zip"
-    Content-Disposition = "attachment"
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["@netlify/blobs"]
+
+# Scheduled rotation - runs every 4 hours
+[functions.rotate-site]
+  schedule = "0 */4 * * *"
+
+# Function to update rotation manually
+[functions.update-rotation]
+  # No schedule - called manually
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Required environment variables for the rotation system
+[context.production.environment]
+  # Set these in your Netlify dashboard:
+  CURRENT_SITE_URL = ""  # Will be set by the rotation system
+  CURRENT_SITE_ID = ""   # Will be set by the rotation system
+  LAST_ROTATION = ""     # Will be set by the rotation system
+  NETLIFY_ACCESS_TOKEN = ""  # Your Netlify API token
+  STABLE_URL = "https://kaveri-mallu.netlify.app"
+
+# Development environment overrides
+[context.develop.environment]
+  NODE_ENV = "development"
+
+# Deploy preview environment overrides
+[context.deploy-preview.environment]
+  NODE_ENV = "preview"
+# NETLIFY_ACCESS_TOKEN - Your Netlify API token
+# GITHUB_REPO - Repository to deploy (e.g., "hardikdesai6774-art/hardik_download")  
+# GITHUB_BRANCH - Branch to deploy (default: "main")
+# URL - Your dummy site URL

@@ -1,0 +1,22 @@
+[build]
+  command = "echo 'No build step needed for static site'"
+  publish = "."
+
+# Functions configuration
+[functions]
+  directory = "netlify/functions"
+
+# Edge function for redirects
+[[edge_functions]]
+  function = "redirect"
+  path = "/*"
+
+# Scheduled Functions - runs every 4 hours (at 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+[functions.scheduled-rotation]
+  schedule = "0 */4 * * *"
+
+# Environment variables (you'll need to set these in Netlify dashboard)
+# NETLIFY_ACCESS_TOKEN - Your Netlify API token
+# GITHUB_REPO - Repository to deploy (e.g., "hardikdesai6774-art/hardik_download")  
+# GITHUB_BRANCH - Branch to deploy (default: "main")
+# URL - Your dummy site URL

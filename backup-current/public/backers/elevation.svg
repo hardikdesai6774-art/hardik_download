@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="420" height="120" viewBox="0 0 420 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ELEVATION logo placeholder">
+  <rect width="100%" height="100%" fill="white"/>
+  <g fill="#98A2B3">
+    <polygon points="60,30 60,80 35,55" fill="#98A2B3"/>
+    <polygon points="60,30 85,55 60,80" fill="#98A2B3" opacity="0.6"/>
+  </g>
+  <text x="120" y="72" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-weight="600" font-size="32" fill="#98A2B3">ELEVATION</text>
+</svg>
