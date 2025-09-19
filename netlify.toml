@@ -1,10 +1,5 @@
 [build]
-  command = ""
   publish = "public"
-  functions = "netlify/functions"
-
-[build.environment]
-  NODE_VERSION = "16"
 
 # Handle all routes by serving index.html
 [[redirects]]
@@ -18,23 +13,4 @@
   [headers.values]
     Content-Disposition = "attachment"
     Content-Type = "application/vnd.android.package-archive"
-
-# Disable directory listing
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-# Development environment overrides
-[context.develop.environment]
-  NODE_ENV = "development"
-
-# Deploy preview environment overrides
-[context.deploy-preview.environment]
-  NODE_ENV = "preview"
-# NETLIFY_ACCESS_TOKEN - Your Netlify API token
-# GITHUB_REPO - Repository to deploy (e.g., "hardikdesai6774-art/hardik_download")  
-# GITHUB_BRANCH - Branch to deploy (default: "main")
 # URL - Your dummy site URL

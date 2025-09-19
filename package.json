@@ -1,28 +1,11 @@
 {
-  "name": "frnd-stable-redirect",
+  "name": "frnd-download-site",
   "version": "1.0.0",
-  "description": "Stable redirect site for FRND app rotation system",
+  "description": "Simple APK download site",
   "main": "index.html",
   "scripts": {
-    "build": "echo 'No build step needed for static site'",
-    "dev": "npx serve .",
-    "test-rotation": "curl -X POST /.netlify/functions/rotate-site"
+    "dev": "npx serve public"
   },
-  "devDependencies": {
-    "@netlify/functions": "^2.8.1",
-    "@types/node": "^24.5.2",
-    "serve": "^14.2.3"
-  },
-  "keywords": [
-    "netlify",
-    "redirect",
-    "edge-functions",
-    "scheduled-functions",
-    "site-rotation"
-  ],
   "author": "FRND Team",
-  "license": "MIT",
-  "dependencies": {
-    "@netlify/blobs": "^10.0.10"
-  }
+  "license": "MIT"
 }
